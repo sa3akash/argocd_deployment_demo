@@ -5,7 +5,7 @@ replicaCount: 1
 image:
   # Replace with your GitHub Container Registry or Docker Hub image path
   # Example: ghcr.io/your-github-username/your-repo-name
-  repository: ghcr.io/placeholder/code
+  repository: ghcr.io/sa3akash/argocd_deployment_demo
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
   tag: "latest"

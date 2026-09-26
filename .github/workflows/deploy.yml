@@ -1,0 +1,119 @@
+name: CI/CD Pipeline - Build, Push & ArgoCD GitOps Deploy
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+    paths-ignore:
+      - "helm/**"
+      - "argocd/**"
+      - "README.md"
+      - "docs/**"
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Target Environment to update"
+        required: true
+        default: "production"
+        type: choice
+        options:
+          - production
+          - testing
+
+permissions:
+  contents: write
+  packages: write
+
+env:
+  REGISTRY: ghcr.io
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set Environment & Image Variables
+        id: vars
+        run: |
+          # Lowercase repository name (GHCR requires lowercase)
+          REPO_LOWER=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
+          IMAGE_URI="${{ env.REGISTRY }}/${REPO_LOWER}"
+          SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
+
+          # Determine target environment
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            TARGET_ENV="${{ github.event.inputs.environment }}"
+          elif [ "${{ github.ref_name }}" = "main" ]; then
+            TARGET_ENV="production"
+          else
+            TARGET_ENV="testing"
+          fi
+
+          echo "image_uri=${IMAGE_URI}" >> $GITHUB_OUTPUT
+          echo "short_sha=${SHORT_SHA}" >> $GITHUB_OUTPUT
+          echo "target_env=${TARGET_ENV}" >> $GITHUB_OUTPUT
+          echo "Building image: ${IMAGE_URI}:${SHORT_SHA} for environment: ${TARGET_ENV}"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ steps.vars.outputs.image_uri }}
+          tags: |
+            type=raw,value=${{ steps.vars.outputs.short_sha }}
+            type=raw,value=latest,enable=${{ steps.vars.outputs.target_env == 'production' }}
+            type=ref,event=branch
+
+      - name: Build and Push Docker Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Update Helm Values for ArgoCD (GitOps)
+        run: |
+          TARGET_ENV="${{ steps.vars.outputs.target_env }}"
+          TARGET_FILE="helm/nextjs-app/values-${TARGET_ENV}.yaml"
+          IMAGE_URI="${{ steps.vars.outputs.image_uri }}"
+          TAG="${{ steps.vars.outputs.short_sha }}"
+
+          echo "Updating ${TARGET_FILE} with image: ${IMAGE_URI} tag: ${TAG}"
+
+          # Update repository and tag lines in the target environment values file
+          sed -i "s|repository: .*|repository: ${IMAGE_URI}|g" "${TARGET_FILE}"
+          sed -i "s|tag: .*|tag: \"${TAG}\"|g" "${TARGET_FILE}"
+
+          # Configure Git user for automated commit
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Commit and push changes back so ArgoCD can detect the new image
+          git add "${TARGET_FILE}"
+          if git diff --staged --quiet; then
+            echo "No changes in values file to commit."
+          else
+            git commit -m "chore(gitops): deploy ${TARGET_ENV} image ${TAG} [skip ci]"
+            git push origin ${{ github.ref_name }}
+          fi

@@ -1,0 +1,27 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: nextjs-app-testing
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    # Replace with your actual GitHub repository URL
+    repoURL: https://github.com/placeholder-user/placeholder-repo.git
+    targetRevision: HEAD
+    path: helm/nextjs-app
+    helm:
+      valueFiles:
+        - values.yaml
+        - values-testing.yaml
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: testing
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

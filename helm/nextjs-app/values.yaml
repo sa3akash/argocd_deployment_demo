@@ -46,14 +46,14 @@ ingress:
   annotations: {}
     # cert-manager.io/cluster-issuer: letsencrypt-prod
   hosts:
-    - host: app.example.com
+    - host: app.sa3avro.eu.cc
       paths:
         - path: /
           pathType: ImplementationSpecific
   tls: []
     # - secretName: app-tls
     #   hosts:
-    #     - app.example.com
+    #     - app.sa3avro.eu.cc
 
 resources:
   limits:

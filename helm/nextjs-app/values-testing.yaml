@@ -3,7 +3,7 @@ replicaCount: 1
 
 image:
   # Updated automatically by GitHub Actions CI/CD
-  repository: ghcr.io/placeholder/code
+  repository: ghcr.io/sa3akash/argocd_deployment_demo
   pullPolicy: Always
   tag: "latest"
 
@@ -24,7 +24,7 @@ ingress:
   annotations:
     kubernetes.io/ingress.class: nginx
   hosts:
-    - host: testing.example.com
+    - host: test.sa3avro.eu.cc
       paths:
         - path: /
           pathType: Prefix

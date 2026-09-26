@@ -46,7 +46,7 @@ ingress:
   annotations: {}
     # cert-manager.io/cluster-issuer: letsencrypt-prod
   hosts:
-    - host: app.sa3avro.eu.cc
+    - host: my.sa3avro.eu.cc
       paths:
         - path: /
           pathType: ImplementationSpecific

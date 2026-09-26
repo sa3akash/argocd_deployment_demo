@@ -9,7 +9,7 @@ spec:
   project: default
   source:
     # Replace with your actual GitHub repository URL
-    repoURL: https://github.com/placeholder-user/placeholder-repo.git
+    repoURL: https://github.com/sa3akash/argocd_deployment_demo.git
     targetRevision: HEAD
     path: helm/nextjs-app
     helm:

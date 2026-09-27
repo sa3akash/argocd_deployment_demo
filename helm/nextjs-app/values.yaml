@@ -1,61 +1,51 @@
 # Default values for nextjs-app.
 
 replicaCount: 1
-
 image:
   # Replace with your GitHub Container Registry or Docker Hub image path
   # Example: ghcr.io/your-github-username/your-repo-name
   repository: ghcr.io/sa3akash/argocd_deployment_demo
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
-  tag: "9d81639"
-
+  tag: "d774fb7"
 # Image pull secret if the GitHub container package is private
 imagePullSecrets:
   - name: ghcr-secret
-
 nameOverride: ""
 fullnameOverride: ""
-
 serviceAccount:
   create: true
   annotations: {}
   name: ""
-
 podAnnotations: {}
-
 podSecurityContext:
   fsGroup: 1001
-
 securityContext:
   capabilities:
     drop:
-    - ALL
+      - ALL
   readOnlyRootFilesystem: false
   runAsNonRoot: true
   runAsUser: 1001
-
 service:
   type: ClusterIP
   port: 80
   targetPort: 3000
-
 ingress:
   enabled: true
   className: "traefik"
   annotations: {}
-    # cert-manager.io/cluster-issuer: letsencrypt-prod
+  # cert-manager.io/cluster-issuer: letsencrypt-prod
   hosts:
     - host: my.sa3avro.eu.cc
       paths:
         - path: /
           pathType: Prefix
   tls: []
-    # Uncomment if you have created the app-tls secret in Kubernetes:
-    # - secretName: app-tls
-    #   hosts:
-    #     - my.sa3avro.eu.cc
-
+  # Uncomment if you have created the app-tls secret in Kubernetes:
+  # - secretName: app-tls
+  #   hosts:
+  #     - my.sa3avro.eu.cc
 resources:
   limits:
     cpu: 500m
@@ -63,31 +53,26 @@ resources:
   requests:
     cpu: 100m
     memory: 256Mi
-
 autoscaling:
   enabled: true
   minReplicas: 2
   maxReplicas: 5
   targetCPUUtilizationPercentage: 80
   targetMemoryUtilizationPercentage: 80
-
 nodeSelector: {}
 tolerations: []
 affinity: {}
-
 # Environment variables
 env:
   - name: NODE_ENV
     value: "production"
   - name: PORT
     value: "3000"
-
 # Secret and ConfigMap environment references (never commit actual secrets to GitHub)
 envFrom:
   - secretRef:
       name: nextjs-secrets
       optional: true
-
 # In-cluster PostgreSQL deployment
 # If enabled=true, Helm deploys PostgreSQL, runs initContainer to wait until healthy, and auto-syncs Drizzle DB
 postgresql:
@@ -103,13 +88,11 @@ postgresql:
     existingSecret: ""
     secretKeys:
       adminPasswordKey: "postgres-password"
-
 # Wait for PostgreSQL to be healthy before starting Next.js
 waitForPostgres:
   enabled: true
   host: ""
   port: 5432
-
 livenessProbe:
   httpGet:
     path: /
@@ -118,7 +101,6 @@ livenessProbe:
   periodSeconds: 10
   timeoutSeconds: 5
   failureThreshold: 3
-
 readinessProbe:
   httpGet:
     path: /

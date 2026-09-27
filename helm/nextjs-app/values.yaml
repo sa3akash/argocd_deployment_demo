@@ -8,9 +8,12 @@ image:
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
   tag: "d774fb7"
-# Image pull secret if the GitHub container package is private
-imagePullSecrets:
-  - name: ghcr-secret
+
+# Image pull secret if the GitHub container package is private.
+# If your GHCR container package is public, keep this empty [] to prevent 'FailedToRetrieveImagePullSecret' warnings.
+imagePullSecrets: []
+  # - name: ghcr-secret
+
 nameOverride: ""
 fullnameOverride: ""
 serviceAccount:
@@ -34,8 +37,10 @@ service:
 ingress:
   enabled: true
   className: "traefik"
-  annotations: {}
-  # cert-manager.io/cluster-issuer: letsencrypt-prod
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.tls: "true"
+    # cert-manager.io/cluster-issuer: letsencrypt-prod
   hosts:
     - host: my.sa3avro.eu.cc
       paths:

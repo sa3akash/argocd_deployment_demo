@@ -39,11 +39,18 @@ spec:
               echo "Waiting for PostgreSQL service to be ready and listening..."
               DB_HOST="{{ if .Values.postgresql.enabled }}{{ include "nextjs-app.fullname" . }}-postgres{{ else }}{{ .Values.waitForPostgres.host | default "postgres" }}{{ end }}"
               DB_PORT="{{ .Values.waitForPostgres.port | default "5432" }}"
-              until nc -z -w 2 "$DB_HOST" "$DB_PORT"; do
-                echo "PostgreSQL ($DB_HOST:$DB_PORT) is not ready yet, sleeping 2 seconds..."
+              MAX_TRIES=30
+              TRIES=0
+              until nc -z -w 2 "$DB_HOST" "$DB_PORT" || [ "$TRIES" -ge "$MAX_TRIES" ]; do
+                TRIES=$((TRIES + 1))
+                echo "PostgreSQL ($DB_HOST:$DB_PORT) is not ready yet (attempt $TRIES/$MAX_TRIES), sleeping 2s..."
                 sleep 2
               done
-              echo "PostgreSQL is ready and accepting connections!"
+              if [ "$TRIES" -ge "$MAX_TRIES" ]; then
+                echo "PostgreSQL wait reached timeout. Proceeding so Next.js container can boot (with fallback)..."
+              else
+                echo "PostgreSQL is ready and accepting connections!"
+              fi
           resources:
             requests:
               cpu: 20m

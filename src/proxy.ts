@@ -2,7 +2,16 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 export function proxy(request: NextRequest) {
-  // Generate a unique trace ID if not already present
+  // 1. Force HTTPS redirect in production if requested over plain HTTP
+  const proto = request.headers.get("x-forwarded-proto");
+  const host = request.headers.get("host") || request.nextUrl.host;
+
+  if (proto === "http") {
+    const httpsUrl = `https://${host}${request.nextUrl.pathname}${request.nextUrl.search}`;
+    return NextResponse.redirect(httpsUrl, 301);
+  }
+
+  // 2. Generate a unique trace ID if not already present
   const traceId = request.headers.get("x-trace-id") || `tr_${Date.now().toString(36)}_${Math.random().toString(36).substring(2, 8)}`;
   const startTime = Date.now();
 
@@ -36,9 +45,13 @@ export function proxy(request: NextRequest) {
     },
   });
 
-  // Inject tracing and timing headers on the response
+  // Inject tracing, timing, and security headers on the response
   response.headers.set("x-trace-id", traceId);
   response.headers.set("x-response-time", `${Date.now() - startTime}ms`);
+  response.headers.set("Strict-Transport-Security", "max-age=31536000; includeSubDomains; preload");
+  response.headers.set("X-Content-Type-Options", "nosniff");
+  response.headers.set("X-Frame-Options", "SAMEORIGIN");
+  response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
 
   return response;
 }

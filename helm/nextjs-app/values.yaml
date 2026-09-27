@@ -8,7 +8,7 @@ image:
   repository: ghcr.io/sa3akash/argocd_deployment_demo
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
-  tag: "latest"
+  tag: "eac0b6b"
 
 # Image pull secret if the GitHub container package is private
 imagePullSecrets:

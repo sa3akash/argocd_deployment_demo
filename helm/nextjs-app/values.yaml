@@ -8,7 +8,7 @@ image:
   repository: ghcr.io/sa3akash/argocd_deployment_demo
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
-  tag: "15778eb"
+  tag: "9d81639"
 
 # Image pull secret if the GitHub container package is private
 imagePullSecrets:
@@ -93,8 +93,8 @@ envFrom:
 postgresql:
   enabled: true
   image:
-    repository: postgres
-    tag: "16-alpine"
+    repository: ghcr.io/sa3akash/argocd_deployment_demo
+    tag: "9d81639"
   auth:
     database: blogdb
     username: postgres

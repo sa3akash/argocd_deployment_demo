@@ -45,25 +45,19 @@ spec:
               containerPort: 5432
               protocol: TCP
           livenessProbe:
-            exec:
-              command:
-                - pg_isready
-                - -U
-                - {{ .Values.postgresql.auth.username | quote }}
-                - -d
-                - {{ .Values.postgresql.auth.database | quote }}
-            initialDelaySeconds: 20
+            tcpSocket:
+              port: 5432
+            initialDelaySeconds: 30
             periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 6
           readinessProbe:
-            exec:
-              command:
-                - pg_isready
-                - -U
-                - {{ .Values.postgresql.auth.username | quote }}
-                - -d
-                - {{ .Values.postgresql.auth.database | quote }}
+            tcpSocket:
+              port: 5432
             initialDelaySeconds: 10
             periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
           resources:
             requests:
               cpu: 100m

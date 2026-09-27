@@ -41,19 +41,20 @@ service:
   targetPort: 3000
 
 ingress:
-  enabled: false
-  className: "nginx"
+  enabled: true
+  className: "traefik"
   annotations: {}
     # cert-manager.io/cluster-issuer: letsencrypt-prod
   hosts:
     - host: my.sa3avro.eu.cc
       paths:
         - path: /
-          pathType: ImplementationSpecific
+          pathType: Prefix
   tls: []
+    # Uncomment if you have created the app-tls secret in Kubernetes:
     # - secretName: app-tls
     #   hosts:
-    #     - app.sa3avro.eu.cc
+    #     - my.sa3avro.eu.cc
 
 resources:
   limits:

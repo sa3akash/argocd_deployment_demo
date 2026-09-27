@@ -4,22 +4,12 @@ on:
   push:
     branches:
       - main
-      - develop
     paths-ignore:
       - "helm/**"
       - "argocd/**"
       - "README.md"
       - "docs/**"
   workflow_dispatch:
-    inputs:
-      environment:
-        description: "Target Environment to update"
-        required: true
-        default: "production"
-        type: choice
-        options:
-          - production
-          - testing
 
 permissions:
   contents: write
@@ -47,19 +37,9 @@ jobs:
           IMAGE_URI="${{ env.REGISTRY }}/${REPO_LOWER}"
           SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
 
-          # Determine target environment
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            TARGET_ENV="${{ github.event.inputs.environment }}"
-          elif [ "${{ github.ref_name }}" = "main" ]; then
-            TARGET_ENV="production"
-          else
-            TARGET_ENV="testing"
-          fi
-
           echo "image_uri=${IMAGE_URI}" >> $GITHUB_OUTPUT
           echo "short_sha=${SHORT_SHA}" >> $GITHUB_OUTPUT
-          echo "target_env=${TARGET_ENV}" >> $GITHUB_OUTPUT
-          echo "Building image: ${IMAGE_URI}:${SHORT_SHA} for environment: ${TARGET_ENV}"
+          echo "Building image: ${IMAGE_URI}:${SHORT_SHA}"
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -78,7 +58,7 @@ jobs:
           images: ${{ steps.vars.outputs.image_uri }}
           tags: |
             type=raw,value=${{ steps.vars.outputs.short_sha }}
-            type=raw,value=latest,enable=${{ steps.vars.outputs.target_env == 'production' }}
+            type=raw,value=latest
             type=ref,event=branch
 
       - name: Build and Push Docker Image
@@ -94,14 +74,13 @@ jobs:
 
       - name: Update Helm Values for ArgoCD (GitOps)
         run: |
-          TARGET_ENV="${{ steps.vars.outputs.target_env }}"
-          TARGET_FILE="helm/nextjs-app/values-${TARGET_ENV}.yaml"
+          TARGET_FILE="helm/nextjs-app/values.yaml"
           IMAGE_URI="${{ steps.vars.outputs.image_uri }}"
           TAG="${{ steps.vars.outputs.short_sha }}"
 
           echo "Updating ${TARGET_FILE} with image: ${IMAGE_URI} tag: ${TAG}"
 
-          # Update repository and tag lines in the target environment values file
+          # Update repository and tag lines in values.yaml
           sed -i "s|repository: .*|repository: ${IMAGE_URI}|g" "${TARGET_FILE}"
           sed -i "s|tag: .*|tag: \"${TAG}\"|g" "${TARGET_FILE}"
 
@@ -114,6 +93,6 @@ jobs:
           if git diff --staged --quiet; then
             echo "No changes in values file to commit."
           else
-            git commit -m "chore(gitops): deploy ${TARGET_ENV} image ${TAG} [skip ci]"
+            git commit -m "chore(gitops): deploy image ${TAG} [skip ci]"
             git push origin ${{ github.ref_name }}
           fi

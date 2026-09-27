@@ -30,12 +30,9 @@ graph LR
 ├── helm/
 │   └── nextjs-app/
 │       ├── Chart.yaml              # Chart metadata
-│       ├── values.yaml             # Default values
-│       ├── values-testing.yaml     # Testing environment configuration
-│       ├── values-production.yaml  # Production environment configuration
+│       ├── values.yaml             # Production values configuration
 │       └── templates/              # Deployment, Service, Ingress, HPA, etc.
 └── argocd/
-    ├── application-testing.yaml    # ArgoCD Application for Testing
     └── application-production.yaml # ArgoCD Application for Production
 ```
 
@@ -90,36 +87,32 @@ If you prefer keeping the package private:
 ---
 
 ### 3. Update the Repository URLs in ArgoCD Manifests
-Open `argocd/application-testing.yaml` and `argocd/application-production.yaml`:
-Replace `https://github.com/placeholder-user/placeholder-repo.git` with your actual GitHub repository URL:
+Open `argocd/application-production.yaml`:
+Ensure `repoURL` points to your GitHub repository URL:
 ```yaml
-repoURL: https://github.com/<your-username>/<your-repo-name>.git
+repoURL: https://github.com/sa3akash/argocd_deployment_demo.git
 ```
 
 ---
 
 ### 4. Deploy to ArgoCD
 
-Apply the application manifests directly to your Kubernetes cluster where ArgoCD is installed:
+Apply the application manifest directly to your Kubernetes cluster where ArgoCD is installed:
 
 ```bash
-# Deploy Testing Application
-kubectl apply -f argocd/application-testing.yaml
-
-# Deploy Production Application
 kubectl apply -f argocd/application-production.yaml
 ```
 
-Alternatively, you can create the applications via the **ArgoCD Web UI**:
+Alternatively, configure the application in the **ArgoCD Web UI**:
 1. Click **+ New App**.
 2. **Application Name**: `nextjs-app-production`
 3. **Project**: `default`
 4. **Sync Policy**: `Automatic` (check `Prune Resources` and `Self Heal`).
 5. **Source**:
-   - Repository URL: `https://github.com/<your-username>/<your-repo-name>.git`
+   - Repository URL: `https://github.com/sa3akash/argocd_deployment_demo.git`
    - Revision: `HEAD`
    - Path: `helm/nextjs-app`
-   - Values Files: Select `values.yaml` and `values-production.yaml`.
+   - Values Files: `values.yaml`
 6. **Destination**:
    - Cluster URL: `https://kubernetes.default.svc`
    - Namespace: `production`
@@ -129,17 +122,12 @@ Alternatively, you can create the applications via the **ArgoCD Web UI**:
 
 ## 🔄 Deployment Workflow
 
-1. **Feature / Testing**:
-   - Push code to `develop` branch.
-   - GitHub Actions builds the image, tags it with the short git SHA, pushes to GHCR, and updates `helm/nextjs-app/values-testing.yaml`.
-   - ArgoCD syncs and updates the **testing** environment.
-
-2. **Production Deployment**:
+1. **Production Deployment**:
    - Merge / Push code to `main` branch.
-   - GitHub Actions builds the image, pushes to GHCR, and updates `helm/nextjs-app/values-production.yaml`.
-   - ArgoCD automatically detects the commit, initiates zero-downtime rolling update in the **production** environment.
+   - GitHub Actions builds the image, pushes to GHCR, and updates `helm/nextjs-app/values.yaml` with the latest commit SHA image tag.
+   - ArgoCD automatically detects the commit, initiates a zero-downtime rolling update in the `production` namespace.
 
-3. **Manual Trigger (workflow_dispatch)**:
+2. **Manual Trigger (workflow_dispatch)**:
    - Go to GitHub **Actions** tab.
    - Select **CI/CD Pipeline - Build, Push & ArgoCD GitOps Deploy**.
-   - Click **Run workflow** and choose whether to deploy to `testing` or `production`.
+   - Click **Run workflow**.

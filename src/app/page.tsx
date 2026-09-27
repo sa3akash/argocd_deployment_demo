@@ -1,10 +1,17 @@
+import { getBlogPosts, fetchDbHealth } from "@/lib/actions";
+import BlogManager from "@/components/BlogManager";
 
-export default function Home() {
+export const dynamic = "force-dynamic";
+
+export default async function Home() {
+  const { posts, traceId } = await getBlogPosts();
+  const health = await fetchDbHealth();
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        auto sync?
-      </main>
-    </div>
+    <BlogManager
+      initialPosts={posts}
+      initialHealth={health}
+      initialTraceId={traceId}
+    />
   );
 }

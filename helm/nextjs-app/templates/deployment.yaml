@@ -37,10 +37,14 @@ spec:
             - name: http
               containerPort: {{ .Values.service.targetPort | default 3000 }}
               protocol: TCP
-          {{- with .Values.env }}
           env:
+            {{- if .Values.postgresql.enabled }}
+            - name: DATABASE_URL
+              value: "postgresql://{{ .Values.postgresql.auth.username }}:{{ .Values.postgresql.auth.password }}@{{ include "nextjs-app.fullname" . }}-postgres:5432/{{ .Values.postgresql.auth.database }}"
+            {{- end }}
+            {{- with .Values.env }}
             {{- toYaml . | nindent 12 }}
-          {{- end }}
+            {{- end }}
           {{- with .Values.envFrom }}
           envFrom:
             {{- toYaml . | nindent 12 }}

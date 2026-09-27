@@ -88,6 +88,22 @@ envFrom:
       name: nextjs-secrets
       optional: true
 
+# Optional in-cluster PostgreSQL deployment
+# If enabled=true, Helm deploys PostgreSQL in the cluster and automatically injects DATABASE_URL
+postgresql:
+  enabled: false
+  image:
+    repository: postgres
+    tag: "16-alpine"
+  auth:
+    database: blogdb
+    username: postgres
+    # Never put real passwords in values.yaml!
+    # Reference a Kubernetes secret created on the server:
+    existingSecret: "postgres-secret"
+    secretKeys:
+      adminPasswordKey: "postgres-password"
+
 livenessProbe:
   httpGet:
     path: /

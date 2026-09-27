@@ -82,3 +82,50 @@ git push origin main
 ```
 
 *(Optional alternative for full GitOps: If you ever want your secrets stored directly in git in encrypted form, you can install **Bitnami Sealed Secrets** or **External Secrets Operator**, but the `kubectl create secret` approach above is the simplest and standard production setup).*
+
+
+---
+
+Because the secret `nextjs-secrets` was already created previously, Kubernetes prevents `create` from accidentally overwriting it.
+
+Here are the two ways to update it:
+
+---
+
+### Method 1: Apply / Update existing secret (Recommended - 1 Command)
+
+Use `--dry-run=client -o yaml | kubectl apply -f -`:
+
+```bash
+kubectl create secret generic nextjs-secrets \
+  --from-literal=DATABASE_URL="postgresql://user:password@db.example.com:5432/blogdb" \
+  -n production \
+  --dry-run=client -o yaml | kubectl apply -f -
+```
+
+---
+
+### Method 2: Delete and Recreate
+
+```bash
+kubectl delete secret nextjs-secrets -n production
+
+kubectl create secret generic nextjs-secrets \
+  --from-literal=DATABASE_URL="postgresql://user:password@db.example.com:5432/blogdb" \
+  -n production
+```
+
+---
+
+### 🔄 Restart the Pods to Apply the New Secret
+
+Once updated, restart your deployment so your running Next.js pods pick up the new database connection:
+
+```bash
+kubectl rollout restart deployment nextjs-app -n production
+```
+
+Check the pod status:
+```bash
+kubectl get pods -n production
+```

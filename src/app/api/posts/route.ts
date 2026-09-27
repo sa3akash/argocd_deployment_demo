@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
 
   try {
     await initDb(traceId);
-    const posts = await getAllPosts(search, category, traceId);
+    const posts = await getAllPosts(search, category, true, traceId);
     const duration = performance.now() - startTime;
 
     logger.info("REST API GET /api/posts", { count: posts.length, durationMs: duration }, traceId, duration);
@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { title, content, author, category, published } = body;
+    const { title, content, excerpt, author, category, tags, published, steps } = body;
 
     if (!title || typeof title !== "string" || !title.trim()) {
       return NextResponse.json(
@@ -68,9 +68,12 @@ export async function POST(request: NextRequest) {
       {
         title: title.trim(),
         content: content.trim(),
+        excerpt: typeof excerpt === "string" ? excerpt.trim() : undefined,
         author: typeof author === "string" ? author.trim() : "API User",
         category: typeof category === "string" ? category.trim() : "General",
+        tags: typeof tags === "string" ? tags.trim() : "DevOps,Cloud",
         published: published !== undefined ? Boolean(published) : true,
+        steps: typeof steps === "string" ? steps : steps ? JSON.stringify(steps) : "[]",
       },
       traceId
     );

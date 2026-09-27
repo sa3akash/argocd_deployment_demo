@@ -88,21 +88,27 @@ envFrom:
       name: nextjs-secrets
       optional: true
 
-# Optional in-cluster PostgreSQL deployment
-# If enabled=true, Helm deploys PostgreSQL in the cluster and automatically injects DATABASE_URL
+# In-cluster PostgreSQL deployment
+# If enabled=true, Helm deploys PostgreSQL, runs initContainer to wait until healthy, and auto-syncs Drizzle DB
 postgresql:
-  enabled: false
+  enabled: true
   image:
     repository: postgres
     tag: "16-alpine"
   auth:
     database: blogdb
     username: postgres
-    # Never put real passwords in values.yaml!
-    # Reference a Kubernetes secret created on the server:
-    existingSecret: "postgres-secret"
+    password: "StrongBlogPassword2026!"
+    # Reference an existing Kubernetes secret if created on cluster (e.g. postgres-secret)
+    existingSecret: ""
     secretKeys:
       adminPasswordKey: "postgres-password"
+
+# Wait for PostgreSQL to be healthy before starting Next.js
+waitForPostgres:
+  enabled: true
+  host: ""
+  port: 5432
 
 livenessProbe:
   httpGet:

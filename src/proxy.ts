@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   // Generate a unique trace ID if not already present
   const traceId = request.headers.get("x-trace-id") || `tr_${Date.now().toString(36)}_${Math.random().toString(36).substring(2, 8)}`;
   const startTime = Date.now();

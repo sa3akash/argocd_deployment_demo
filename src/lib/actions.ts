@@ -9,9 +9,16 @@ import {
   createPost,
   updatePost,
   deletePost,
+  incrementPostViews,
+  incrementPostLikes,
   getDbHealth,
+  syncDatabase,
+  getPostComments,
+  createComment,
+  likeComment,
   Post,
-} from "./db";
+  Comment,
+} from "@/db";
 import { logger } from "./logger";
 
 async function getTraceId(): Promise<string> {
@@ -19,10 +26,10 @@ async function getTraceId(): Promise<string> {
   return headerList.get("x-trace-id") || `tr_${Date.now().toString(36)}`;
 }
 
-export async function getBlogPosts(search?: string, category?: string): Promise<{ posts: Post[]; traceId: string }> {
+export async function getBlogPosts(search?: string, category?: string, includeDrafts = true): Promise<{ posts: Post[]; traceId: string }> {
   const traceId = await getTraceId();
   await initDb(traceId);
-  const posts = await getAllPosts(search, category, traceId);
+  const posts = await getAllPosts(search, category, includeDrafts, traceId);
   return { posts, traceId };
 }
 
@@ -38,8 +45,12 @@ export async function createNewPost(formData: FormData): Promise<{ success: bool
   try {
     const title = formData.get("title") as string;
     const content = formData.get("content") as string;
+    const excerpt = (formData.get("excerpt") as string) || "";
     const author = (formData.get("author") as string) || "Admin";
     const category = (formData.get("category") as string) || "General";
+    const tags = (formData.get("tags") as string) || "DevOps,Cloud";
+    const published = formData.get("published") === "true";
+    const steps = (formData.get("steps") as string) || "[]";
 
     if (!title || !title.trim()) {
       return { success: false, error: "Title is required", traceId };
@@ -53,14 +64,17 @@ export async function createNewPost(formData: FormData): Promise<{ success: bool
       {
         title: title.trim(),
         content: content.trim(),
+        excerpt: excerpt.trim() || content.trim().slice(0, 160) + "...",
         author: author.trim(),
         category: category.trim(),
-        published: true,
+        tags: tags.trim(),
+        published,
+        steps,
       },
       traceId
     );
 
-    logger.info("Server Action createNewPost succeeded", { id: post.id, title: post.title }, traceId);
+    logger.info("Server Action: Created post", { id: post.id, title: post.title }, traceId);
     revalidatePath("/");
     return { success: true, post, traceId };
   } catch (err) {
@@ -81,8 +95,12 @@ export async function updateExistingPost(
   try {
     const title = formData.get("title") as string;
     const content = formData.get("content") as string;
+    const excerpt = formData.get("excerpt") as string;
     const author = formData.get("author") as string;
     const category = formData.get("category") as string;
+    const tags = formData.get("tags") as string;
+    const published = formData.has("published") ? formData.get("published") === "true" : undefined;
+    const steps = formData.get("steps") as string;
 
     await initDb(traceId);
     const updated = await updatePost(
@@ -90,8 +108,12 @@ export async function updateExistingPost(
       {
         title: title ? title.trim() : undefined,
         content: content ? content.trim() : undefined,
+        excerpt: excerpt !== undefined ? excerpt.trim() : undefined,
         author: author ? author.trim() : undefined,
         category: category ? category.trim() : undefined,
+        tags: tags ? tags.trim() : undefined,
+        published,
+        steps: steps !== undefined ? steps : undefined,
       },
       traceId
     );
@@ -100,7 +122,7 @@ export async function updateExistingPost(
       return { success: false, error: "Post not found", traceId };
     }
 
-    logger.info("Server Action updateExistingPost succeeded", { id }, traceId);
+    logger.info(`Server Action: Updated post ${id}`, undefined, traceId);
     revalidatePath("/");
     return { success: true, post: updated, traceId };
   } catch (err) {
@@ -118,7 +140,7 @@ export async function deleteExistingPost(id: number): Promise<{ success: boolean
   try {
     await initDb(traceId);
     const success = await deletePost(id, traceId);
-    logger.info("Server Action deleteExistingPost completed", { id, success }, traceId);
+    logger.info(`Server Action: Deleted post ${id}`, { success }, traceId);
     revalidatePath("/");
     return { success, traceId };
   } catch (err) {
@@ -131,10 +153,25 @@ export async function deleteExistingPost(id: number): Promise<{ success: boolean
   }
 }
 
+export async function recordPostView(id: number): Promise<{ views: number; traceId: string }> {
+  const traceId = await getTraceId();
+  await initDb(traceId);
+  const views = await incrementPostViews(id, traceId);
+  return { views, traceId };
+}
+
+export async function recordPostLike(id: number): Promise<{ likes: number; traceId: string }> {
+  const traceId = await getTraceId();
+  await initDb(traceId);
+  const likes = await incrementPostLikes(id, traceId);
+  return { likes, traceId };
+}
+
 export async function fetchDbHealth(): Promise<{
   status: "connected" | "disconnected";
   mode: "postgres" | "in-memory";
   count: number;
+  totalViews: number;
   latencyMs?: number;
   traceId: string;
 }> {
@@ -142,4 +179,47 @@ export async function fetchDbHealth(): Promise<{
   await initDb(traceId);
   const health = await getDbHealth(traceId);
   return { ...health, traceId };
+}
+
+export async function syncDatabaseAction(): Promise<{
+  success: boolean;
+  message: string;
+  mode: "postgres" | "in-memory";
+  rowCount: number;
+  durationMs: number;
+  traceId: string;
+}> {
+  const traceId = await getTraceId();
+  const res = await syncDatabase(traceId);
+  revalidatePath("/");
+  return { ...res, traceId };
+}
+
+export async function fetchPostComments(postId: number): Promise<{ comments: Comment[]; traceId: string }> {
+  const traceId = await getTraceId();
+  await initDb(traceId);
+  const comments = await getPostComments(postId, traceId);
+  return { comments, traceId };
+}
+
+export async function addCommentToPost(
+  postId: number,
+  author: string,
+  content: string
+): Promise<{ success: boolean; comment?: Comment; error?: string; traceId: string }> {
+  const traceId = await getTraceId();
+  if (!content || !content.trim()) {
+    return { success: false, error: "Comment content cannot be empty", traceId };
+  }
+  await initDb(traceId);
+  const comment = await createComment(postId, author, content, traceId);
+  revalidatePath("/");
+  return { success: true, comment, traceId };
+}
+
+export async function recordCommentLike(commentId: number): Promise<{ likes: number; traceId: string }> {
+  const traceId = await getTraceId();
+  await initDb(traceId);
+  const likes = await likeComment(commentId, traceId);
+  return { likes, traceId };
 }

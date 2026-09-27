@@ -27,6 +27,32 @@ spec:
       serviceAccountName: {{ include "nextjs-app.fullname" . }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      {{- if or .Values.postgresql.enabled (and .Values.waitForPostgres .Values.waitForPostgres.enabled) }}
+      initContainers:
+        - name: wait-for-postgres
+          image: "{{ .Values.postgresql.image.repository | default "postgres" }}:{{ .Values.postgresql.image.tag | default "16-alpine" }}"
+          imagePullPolicy: IfNotPresent
+          command:
+            - sh
+            - -c
+            - |
+              echo "Waiting for PostgreSQL service to be healthy..."
+              DB_HOST="{{ if .Values.postgresql.enabled }}{{ include "nextjs-app.fullname" . }}-postgres{{ else }}{{ .Values.waitForPostgres.host | default "postgres" }}{{ end }}"
+              DB_PORT="{{ .Values.waitForPostgres.port | default "5432" }}"
+              DB_USER="{{ .Values.postgresql.auth.username | default "postgres" }}"
+              until pg_isready -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER"; do
+                echo "PostgreSQL ($DB_HOST:$DB_PORT) is not ready yet, sleeping 2 seconds..."
+                sleep 2
+              done
+              echo "PostgreSQL is healthy and accepting connections!"
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 100m
+              memory: 128Mi
+      {{- end }}
       containers:
         - name: {{ .Chart.Name }}
           securityContext:

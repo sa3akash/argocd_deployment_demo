@@ -93,8 +93,8 @@ envFrom:
 postgresql:
   enabled: true
   image:
-    repository: ghcr.io/sa3akash/argocd_deployment_demo
-    tag: "9d81639"
+    repository: postgres
+    tag: "16-alpine"
   auth:
     database: blogdb
     username: postgres

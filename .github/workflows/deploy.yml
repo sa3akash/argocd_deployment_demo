@@ -80,9 +80,13 @@ jobs:
 
           echo "Updating ${TARGET_FILE} with image: ${IMAGE_URI} tag: ${TAG}"
 
-          # Update repository and tag lines in values.yaml
-          sed -i "s|repository: .*|repository: ${IMAGE_URI}|g" "${TARGET_FILE}"
-          sed -i "s|tag: .*|tag: \"${TAG}\"|g" "${TARGET_FILE}"
+          # Update ONLY the top-level app image (do not touch postgresql image)
+          if command -v yq >/dev/null 2>&1; then
+            yq -i ".image.repository = \"${IMAGE_URI}\" | .image.tag = \"${TAG}\"" "${TARGET_FILE}"
+          else
+            sed -i "0,/repository: .*/s|repository: .*|repository: ${IMAGE_URI}|" "${TARGET_FILE}"
+            sed -i "0,/tag: .*/s|tag: .*|tag: \"${TAG}\"|" "${TARGET_FILE}"
+          fi
 
           # Configure Git user for automated commit
           git config --global user.name "github-actions[bot]"

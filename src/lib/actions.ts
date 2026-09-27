@@ -6,6 +6,7 @@ import {
   initDb,
   getAllPosts,
   getPostById,
+  getPostBySlug,
   createPost,
   updatePost,
   deletePost,
@@ -37,6 +38,13 @@ export async function getSinglePost(id: number): Promise<{ post: Post | null; tr
   const traceId = await getTraceId();
   await initDb(traceId);
   const post = await getPostById(id, traceId);
+  return { post, traceId };
+}
+
+export async function getSinglePostBySlug(slug: string): Promise<{ post: Post | null; traceId: string }> {
+  const traceId = await getTraceId();
+  await initDb(traceId);
+  const post = await getPostBySlug(slug, traceId);
   return { post, traceId };
 }
 

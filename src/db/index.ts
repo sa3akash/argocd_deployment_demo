@@ -483,6 +483,30 @@ export async function getPostById(id: number, traceId?: string): Promise<Post | 
   return found;
 }
 
+export async function getPostBySlug(slug: string, traceId?: string): Promise<Post | null> {
+  const start = performance.now();
+  const { db, isPostgres } = getDrizzleDb();
+
+  if (isPostgres && db && isInitialized) {
+    try {
+      const result = await db.select().from(posts).where(eq(posts.slug, slug)).limit(1);
+      const duration = performance.now() - start;
+      if (result.length === 0) {
+        logger.warn(`Drizzle: Post slug ${slug} not found`, undefined, traceId, duration);
+        return null;
+      }
+      return result[0];
+    } catch (err) {
+      logger.error(`Drizzle: Error querying post by slug ${slug}`, err, undefined, traceId);
+    }
+  }
+
+  const found = inMemoryPosts.find((p) => p.slug === slug) || null;
+  const duration = performance.now() - start;
+  logger.info(`Fetched post by slug ${slug} (in-memory)`, { found: !!found }, traceId, duration);
+  return found;
+}
+
 export async function createPost(
   input: {
     title: string;

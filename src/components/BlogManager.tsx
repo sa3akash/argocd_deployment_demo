@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition, useEffect } from "react";
+import Link from "next/link";
 import { Post, CommandStep, Comment } from "@/db";
 import {
   createNewPost,
@@ -303,33 +304,54 @@ export default function BlogManager({ initialPosts, initialHealth, initialTraceI
       )}
 
       {/* Modern Top Navbar */}
-      <header className="sticky top-0 z-40 border-b border-slate-800/80 bg-[#07090e]/85 backdrop-blur-2xl">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-4">
+      <header className="sticky top-0 z-40 border-b border-slate-800/80 bg-[#07090e]/90 backdrop-blur-2xl">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-4 flex flex-col md:flex-row items-center justify-between gap-3 sm:gap-4">
           {/* Logo & Platform Tag */}
-          <div className="flex items-center gap-4">
-            <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-cyan-400 flex items-center justify-center font-black text-xl text-white shadow-xl shadow-indigo-600/30">
-              ⚡
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="font-extrabold text-xl tracking-tight bg-gradient-to-r from-white via-slate-200 to-indigo-200 bg-clip-text text-transparent">
-                  DevOps Pulse
-                </span>
-                <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/25">
-                  Drizzle + Postgres
-                </span>
+          <div className="w-full md:w-auto flex items-center justify-between md:justify-start gap-3">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-2xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-cyan-400 flex items-center justify-center font-black text-lg sm:text-xl text-white shadow-xl shadow-indigo-600/30 shrink-0">
+                ⚡
               </div>
-              <p className="text-xs text-slate-400 hidden sm:block">
-                Kubernetes GitOps • Multi-Step Commands • Observability
-              </p>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h1 className="font-extrabold text-base sm:text-xl tracking-tight bg-gradient-to-r from-white via-slate-200 to-indigo-200 bg-clip-text text-transparent">
+                    DevOps Pulse
+                  </h1>
+                  <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/25">
+                    GitOps + Drizzle
+                  </span>
+                </div>
+                <p className="text-[11px] sm:text-xs text-slate-400 hidden xs:block">
+                  Kubernetes GitOps • Multi-Step Commands • Observability
+                </p>
+              </div>
+            </div>
+
+            {/* Quick Mobile Action Buttons */}
+            <div className="flex md:hidden items-center gap-2">
+              <button
+                onClick={handleSyncDatabase}
+                disabled={isSyncing}
+                title="Sync Database"
+                className="p-2 rounded-xl bg-slate-900 border border-slate-800 text-xs text-indigo-400 hover:text-white"
+              >
+                {isSyncing ? "⏳" : "🔄"}
+              </button>
+              <button
+                onClick={handleOpenCreate}
+                title="Create Article"
+                className="p-2 rounded-xl bg-indigo-600 text-white text-xs font-bold"
+              >
+                +
+              </button>
             </div>
           </div>
 
-          {/* Navigation Tabs */}
-          <div className="flex items-center p-1 rounded-2xl bg-slate-900/90 border border-slate-800 text-xs font-semibold">
+          {/* Navigation Tabs (Mobile-Friendly Responsive) */}
+          <nav className="w-full md:w-auto flex items-center p-1 rounded-2xl bg-slate-900/90 border border-slate-800 text-xs font-semibold overflow-x-auto">
             <button
               onClick={() => setActiveTab("reader")}
-              className={`px-4 py-2 rounded-xl transition-all flex items-center gap-2 ${
+              className={`flex-1 md:flex-none px-3.5 py-2 rounded-xl transition-all whitespace-nowrap flex items-center justify-center gap-1.5 ${
                 activeTab === "reader"
                   ? "bg-indigo-600 text-white shadow-lg shadow-indigo-600/30"
                   : "text-slate-400 hover:text-slate-200"
@@ -339,27 +361,27 @@ export default function BlogManager({ initialPosts, initialHealth, initialTraceI
             </button>
             <button
               onClick={() => setActiveTab("commands")}
-              className={`px-4 py-2 rounded-xl transition-all flex items-center gap-2 ${
+              className={`flex-1 md:flex-none px-3.5 py-2 rounded-xl transition-all whitespace-nowrap flex items-center justify-center gap-1.5 ${
                 activeTab === "commands"
                   ? "bg-indigo-600 text-white shadow-lg shadow-indigo-600/30"
                   : "text-slate-400 hover:text-slate-200"
               }`}
             >
-              <span>💻 Step Runner</span>
+              <span>⚡ Step Runner</span>
             </button>
             <button
               onClick={() => setActiveTab("admin")}
-              className={`px-4 py-2 rounded-xl transition-all flex items-center gap-2 ${
+              className={`flex-1 md:flex-none px-3.5 py-2 rounded-xl transition-all whitespace-nowrap flex items-center justify-center gap-1.5 ${
                 activeTab === "admin"
                   ? "bg-indigo-600 text-white shadow-lg shadow-indigo-600/30"
                   : "text-slate-400 hover:text-slate-200"
               }`}
             >
-              <span>🛡️ Admin Studio</span>
+              <span>⚙️ Admin Studio</span>
             </button>
-          </div>
+          </nav>
 
-          {/* Status & Action */}
+          {/* Status & Action (Desktop) */}
           <div className="hidden lg:flex items-center gap-3">
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-xs">
               <span
@@ -488,10 +510,20 @@ export default function BlogManager({ initialPosts, initialHealth, initialTraceI
                         </div>
                       </div>
 
-                      {/* Title */}
-                      <h2 className="text-xl font-bold text-white group-hover:text-indigo-300 transition-colors line-clamp-2 leading-snug">
-                        {post.title}
-                      </h2>
+                      {/* Title & Direct Route Link */}
+                      <div className="flex items-start justify-between gap-2">
+                        <h2 className="text-lg sm:text-xl font-bold text-white group-hover:text-indigo-300 transition-colors line-clamp-2 leading-snug">
+                          {post.title}
+                        </h2>
+                        <Link
+                          href={`/posts/${post.slug}`}
+                          onClick={(e) => e.stopPropagation()}
+                          className="p-1.5 rounded-lg bg-slate-800/80 hover:bg-indigo-600/30 text-slate-400 hover:text-indigo-300 transition-all shrink-0"
+                          title="Open dedicated article page"
+                        >
+                          <span className="text-xs">↗</span>
+                        </Link>
+                      </div>
 
                       {/* Excerpt */}
                       <p className="text-sm text-slate-400 line-clamp-3 leading-relaxed">
@@ -722,15 +754,23 @@ export default function BlogManager({ initialPosts, initialHealth, initialTraceI
 
       {/* ======================= ARTICLE READER MODAL ======================= */}
       {readingPost && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in overflow-y-auto">
-          <div className="relative w-full max-w-3xl my-8 rounded-3xl bg-[#0b0e14] border border-slate-800 shadow-2xl p-6 sm:p-10 space-y-6">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-md animate-fade-in overflow-y-auto">
+          <div className="relative w-full max-w-3xl my-auto rounded-3xl bg-[#0b0e14] border border-slate-800 shadow-2xl p-5 sm:p-10 space-y-6 max-h-[92vh] overflow-y-auto">
             <div className="flex items-center justify-between pb-4 border-b border-slate-800">
-              <span className="px-3 py-1 rounded-lg bg-indigo-500/10 border border-indigo-500/30 text-indigo-300 text-xs font-semibold">
-                {readingPost.category}
-              </span>
+              <div className="flex items-center gap-3">
+                <span className="px-3 py-1 rounded-lg bg-indigo-500/10 border border-indigo-500/30 text-indigo-300 text-xs font-semibold">
+                  {readingPost.category}
+                </span>
+                <Link
+                  href={`/posts/${readingPost.slug}`}
+                  className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1 font-medium transition-colors"
+                >
+                  <span>Open Full Page ↗</span>
+                </Link>
+              </div>
               <button
                 onClick={() => setReadingPost(null)}
-                className="w-8 h-8 rounded-xl bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center font-bold"
+                className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center font-bold"
               >
                 ✕
               </button>
@@ -909,8 +949,8 @@ export default function BlogManager({ initialPosts, initialHealth, initialTraceI
 
       {/* ======================= ADMIN CREATE / EDIT MODAL ======================= */}
       {isEditorOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in overflow-y-auto">
-          <div className="relative w-full max-w-2xl my-8 rounded-3xl bg-[#0b0e14] border border-slate-800 shadow-2xl p-6 sm:p-8 space-y-6">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-md animate-fade-in overflow-y-auto">
+          <div className="relative w-full max-w-2xl my-auto rounded-3xl bg-[#0b0e14] border border-slate-800 shadow-2xl p-5 sm:p-8 space-y-6 max-h-[92vh] overflow-y-auto">
             <div className="flex items-center justify-between pb-3 border-b border-slate-800">
               <h3 className="text-xl font-bold text-white">
                 {editingPostId ? "Edit Article" : "Create New Article"}

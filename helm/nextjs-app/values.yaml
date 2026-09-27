@@ -7,7 +7,7 @@ image:
   repository: ghcr.io/sa3akash/argocd_deployment_demo
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
-  tag: "58fdb3a"
+  tag: "c5d98bd"
 # Image pull secret if the GitHub container package is private.
 # If your GHCR container package is public, keep this empty [] to prevent 'FailedToRetrieveImagePullSecret' warnings.
 imagePullSecrets: []

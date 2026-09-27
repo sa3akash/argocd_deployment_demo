@@ -82,6 +82,12 @@ env:
   - name: PORT
     value: "3000"
 
+# Secret and ConfigMap environment references (never commit actual secrets to GitHub)
+envFrom:
+  - secretRef:
+      name: nextjs-secrets
+      optional: true
+
 livenessProbe:
   httpGet:
     path: /

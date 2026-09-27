@@ -59,11 +59,11 @@ class Logger {
       case "WARN":
         console.warn(formatted);
         break;
-      case "DEBUG":
-        console.debug(formatted);
-        break;
       default:
-        console.log(formatted);
+        if (!this.isProduction) {
+          console.log(formatted);
+        }
+        break;
     }
   }
 

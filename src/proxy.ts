@@ -19,25 +19,6 @@ export function proxy(request: NextRequest) {
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set("x-trace-id", traceId);
 
-  // Structured request log to console
-  const method = request.method;
-  const path = request.nextUrl.pathname;
-  const ip = request.headers.get("x-forwarded-for")?.split(",")[0].trim() || request.headers.get("x-real-ip") || "local";
-
-  if (!path.startsWith("/_next") && !path.includes(".")) {
-    console.log(
-      JSON.stringify({
-        timestamp: new Date().toISOString(),
-        level: "INFO",
-        type: "HTTP_REQUEST",
-        method,
-        path,
-        ip,
-        traceId,
-      })
-    );
-  }
-
   // Create response with modified request headers
   const response = NextResponse.next({
     request: {

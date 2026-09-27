@@ -256,10 +256,20 @@ export async function initDb(traceId?: string): Promise<{ connected: boolean; mo
             published BOOLEAN DEFAULT true NOT NULL,
             views INTEGER DEFAULT 0 NOT NULL,
             likes INTEGER DEFAULT 0 NOT NULL,
+            comments_count INTEGER DEFAULT 0 NOT NULL,
             read_time VARCHAR(50) DEFAULT '3 min read' NOT NULL,
             steps TEXT DEFAULT '[]' NOT NULL,
             created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
             updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL
+          );
+          ALTER TABLE posts ADD COLUMN IF NOT EXISTS comments_count INTEGER DEFAULT 0 NOT NULL;
+          CREATE TABLE IF NOT EXISTS comments (
+            id SERIAL PRIMARY KEY,
+            post_id INTEGER NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
+            author VARCHAR(100) DEFAULT 'Anonymous' NOT NULL,
+            content TEXT NOT NULL,
+            likes INTEGER DEFAULT 0 NOT NULL,
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL
           );
         `);
       }

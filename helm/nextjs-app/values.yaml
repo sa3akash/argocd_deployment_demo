@@ -99,7 +99,7 @@ waitForPostgres:
   port: 5432
 livenessProbe:
   httpGet:
-    path: /
+    path: /api/health
     port: 3000
   initialDelaySeconds: 15
   periodSeconds: 10
@@ -107,9 +107,9 @@ livenessProbe:
   failureThreshold: 3
 readinessProbe:
   httpGet:
-    path: /
+    path: /api/health
     port: 3000
   initialDelaySeconds: 10
   periodSeconds: 5
   timeoutSeconds: 3
-  failureThreshold: 2
+  failureThreshold: 3
